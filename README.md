@@ -65,6 +65,15 @@ docker run --read-only --tmpfs /tmp -p 8001:8000 -e DPDPKIT_DATABASE_URL=... ghc
 
 The worker serves the same `/healthz`, `/readyz` and `/metrics` on its port.
 
+Images are published for `linux/amd64` and `linux/arm64` under one tag, signed with cosign (keyless, from the
+release workflow) and carry an SBOM and build provenance. Verify before you run:
+
+```sh
+cosign verify ghcr.io/dpdpkit-dev/server:<version> \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/dpdpkit-dev/dpdpkit-server/\.github/workflows/release-image\.yml@refs/tags/v'
+```
+
 Until then, use [`dpdpkit-fastapi`](https://github.com/dpdpkit-dev/dpdpkit-fastapi) or the core library
 [`dpdpkit-core`](https://github.com/dpdpkit-dev/dpdpkit-core). Documentation:
 https://dpdpkit-dev.github.io/dpdpkit-docs/dev/
