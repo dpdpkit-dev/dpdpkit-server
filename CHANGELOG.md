@@ -29,6 +29,11 @@ first working release.
   confirmed export closes the access request, and a failed one leaves it open. Admin endpoints
   `GET /admin/webhooks/deliveries`, `GET /admin/webhooks/dead-letters` and `POST /admin/webhooks/redeliver`.
   `create_app(settings, dpdpkit)` takes the engine; without it these endpoints answer 503.
+- `worker` command (`python -m dpdpkit.server worker`): runs retention (15 min), ledger verification (02:00 UTC),
+  root-hash export (03:00 UTC) and webhook delivery (30 s) and serves the probes on the usual port, so the image
+  health check works for it too. Needs `DPDPKIT_DATABASE_URL`.
+- `/readyz` (503 until the database answers) and `/metrics` (Prometheus text format). `create_app` now builds the
+  engine from `DPDPKIT_DATABASE_URL` and the mounted `dpdpkit.yaml` when none is passed.
 
 ## 0.0.1a0 - 2026-11-01
 

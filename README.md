@@ -52,9 +52,18 @@ curl -X POST http://localhost:8000/v1/webhooks/confirmations -H "Authorization: 
 that is never confirmed stays open and shows as overdue. Failed deliveries are listed at
 `GET /admin/webhooks/dead-letters` and can be re-queued with `POST /admin/webhooks/redeliver`.
 
-Planned:
+Probes and metrics (no credentials, so keep them off the public internet): `/healthz` is liveness, `/readyz`
+answers 503 until the database responds, and `/metrics` is Prometheus text (HTTP requests, worker job runs and last
+success time, webhook deliveries by status).
 
-- `worker` command and `/healthz`, `/readyz`, `/metrics`
+The periodic jobs (retention, daily ledger verification, root-hash export, webhook delivery) run in a separate
+container from the same image. Run exactly one:
+
+```sh
+docker run --read-only --tmpfs /tmp -p 8001:8000 -e DPDPKIT_DATABASE_URL=... ghcr.io/dpdpkit-dev/server worker
+```
+
+The worker serves the same `/healthz`, `/readyz` and `/metrics` on its port.
 
 Until then, use [`dpdpkit-fastapi`](https://github.com/dpdpkit-dev/dpdpkit-fastapi) or the core library
 [`dpdpkit-core`](https://github.com/dpdpkit-dev/dpdpkit-core). Documentation:
