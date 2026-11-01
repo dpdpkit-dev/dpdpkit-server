@@ -23,6 +23,7 @@ dependencies = [
   "dpdpkit-core>=0.1.0a1,<0.2",
   "dpdpkit-fastapi>=0.1.0a1,<0.2",
   "uvicorn>=0.29",
+  "httpx>=0.27",
 ]
 
 [project.optional-dependencies]

@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from dpdpkit.server import __version__
+from dpdpkit.server.routes import router
 from dpdpkit.server.settings import Settings
 
 
@@ -17,5 +18,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
+
+    app.include_router(router)
 
     return app
