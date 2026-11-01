@@ -19,9 +19,28 @@ image release workflow (multi-arch, signed with cosign). The image only serves `
 docker run --read-only --tmpfs /tmp -p 8000:8000 ghcr.io/dpdpkit-dev/server
 ```
 
+Configuration comes from environment variables or a mounted `dpdpkit.yaml` (environment wins):
+
+```sh
+docker run --read-only --tmpfs /tmp -p 8000:8000 \
+  -v ./dpdpkit.yaml:/etc/dpdpkit/dpdpkit.yaml:ro \
+  -e DPDPKIT_DATABASE_URL=postgresql://... ghcr.io/dpdpkit-dev/server
+```
+
+| Setting | Variable | `server:` key | Default |
+|---|---|---|---|
+| Config file | `DPDPKIT_CONFIG` | n/a | `/etc/dpdpkit/dpdpkit.yaml`, then `./dpdpkit.yaml`, if present |
+| Bind address | `DPDPKIT_HOST` | `host` | `0.0.0.0` |
+| Port | `DPDPKIT_PORT` | `port` | `8000` |
+| Log level | `DPDPKIT_LOG_LEVEL` | `log_level` | `info` |
+| Migrate on start | `DPDPKIT_MIGRATE_ON_STARTUP` | `migrate_on_startup` | `false` |
+| Database URL (secret) | `DPDPKIT_DATABASE_URL` or `_FILE` | not allowed | none |
+| Signing key (secret) | `DPDPKIT_SIGNING_KEY` or `_FILE` | not allowed | none |
+
+The settings are loaded and validated at start-up; they are not wired to the database or the API yet.
+
 Planned:
 
-- Configuration from environment variables or a mounted `dpdpkit.yaml`
 - Hashed API keys, signed end-user tokens, admin login with optional OIDC
 - Webhooks (`erasure.due`, `export.requested`) with callback confirmation into the ledger
 - `worker` command and `/healthz`, `/readyz`, `/metrics`
