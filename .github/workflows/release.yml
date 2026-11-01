@@ -1,0 +1,109 @@
+# Release on tag vX.Y.Z (after dpdpkit-core X.Y.Z is on PyPI, in release-train order).
+# .devN tags go to TestPyPI; aN, bN, rcN and final tags go to PyPI via trusted publishing.
+# Release-train order: policies (if changed) -> core -> adapters -> JS packages.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+      target: ${{ steps.v.outputs.target }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - id: v
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" =~ (a|b|rc|dev)[0-9]*$ ]]; then echo "prerelease=true"; else echo "prerelease=false"; fi >> "$GITHUB_OUTPUT"
+          # .devN builds rehearse on TestPyPI; alphas, betas, release candidates and finals go to PyPI.
+          if [[ "$version" == *dev* ]]; then echo "target=testpypi"; else echo "target=pypi"; fi >> "$GITHUB_OUTPUT"
+      - name: Test against published dependencies (core from PyPI)
+        run: |
+          uv venv
+          # dpdpkit-core may have been released moments ago; give PyPI up to ~10 minutes.
+          for attempt in $(seq 1 20); do
+            uv pip install --refresh -e ".[dev]" ${{ steps.v.outputs.target == 'testpypi' && '--prerelease=allow --index https://test.pypi.org/simple/ --index-strategy unsafe-best-match' || '' }} && break
+            if [ "$attempt" = 20 ]; then echo "dependencies not available on the index"; exit 1; fi
+            echo "dependencies not on the index yet; retrying in 30s ($attempt/20)"; sleep 30
+          done
+          .venv/bin/pytest -q
+      - name: Build
+        run: |
+          uv build --out-dir dist
+      - name: Tag must match package version
+        run: |
+          ls dist/dpdpkit_server-${{ steps.v.outputs.version }}-*.whl
+      - name: SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: |
+            dist/
+            sbom.spdx.json
+
+  publish-testpypi:
+    needs: build
+    if: needs.build.outputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with: { name: dist }
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    needs: build
+    if: needs.build.outputs.target == 'pypi'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with: { name: dist }
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    needs: [build, publish-testpypi, publish-pypi]
+    if: always() && needs.build.result == 'success' && (needs.publish-pypi.result == 'success' || needs.publish-testpypi.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with: { name: dist }
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="${{ needs.build.outputs.version }}" '
+            $0 ~ "^## " { if (found) exit; if (index($0, v)) { found=1; next } }
+            found { print }' CHANGELOG.md > notes.md
+          test -s notes.md || echo "See CHANGELOG.md" > notes.md
+      - uses: softprops/action-gh-release@v3
+        with:
+          body_path: notes.md
+          prerelease: ${{ needs.build.outputs.prerelease == 'true' }}
+          files: |
+            dist/*
+            sbom.spdx.json

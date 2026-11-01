@@ -1,0 +1,65 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dpdpkit-server"
+dynamic = ["version"]
+description = "Self-hosted dpdpkit server: the DPDP consent and rights API as a Docker image, for apps in any language."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "dpdpkit maintainers" }]
+keywords = ["dpdp", "privacy", "consent", "india", "docker", "self-hosted"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Typing :: Typed",
+]
+dependencies = [
+  "dpdpkit-core>=0.1.0a1,<0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "ruff>=0.6",
+  "mypy>=1.11",
+]
+
+[project.urls]
+Homepage = "https://github.com/dpdpkit-dev/dpdpkit-server"
+Documentation = "https://dpdpkit-dev.github.io/dpdpkit-docs/dev/"
+Changelog = "https://github.com/dpdpkit-dev/dpdpkit-server/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "src/dpdpkit/server/__init__.py"
+
+# Ships only dpdpkit/server/; dpdpkit/__init__.py belongs to dpdpkit-core.
+[tool.hatch.build.targets.wheel]
+only-include = ["src/dpdpkit/server"]
+sources = ["src"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/dpdpkit/server", "tests", "README.md", "CHANGELOG.md", "LICENSE"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dpdpkit"]
+
+[tool.mypy]
+python_version = "3.10"
+disallow_untyped_defs = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

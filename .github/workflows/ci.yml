@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+      - name: Install (non-editable, so mypy sees dpdpkit and dpdpkit.server in one tree)
+        run: |
+          uv venv
+          uv pip install \
+            "dpdpkit-policies @ git+https://github.com/dpdpkit-dev/dpdpkit-policies@main" \
+            "dpdpkit-core @ git+https://github.com/dpdpkit-dev/dpdpkit-core@main" \
+            ".[dev]"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: ruff check . && ruff format --check .
+      - run: cd /tmp && mypy -p dpdpkit.server --disallow-untyped-defs
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: |
+          uv venv
+          uv pip install \
+            "dpdpkit-policies @ git+https://github.com/dpdpkit-dev/dpdpkit-policies@main" \
+            "dpdpkit-core @ git+https://github.com/dpdpkit-dev/dpdpkit-core@main" \
+            -e ".[dev]"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: pytest -q
