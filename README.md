@@ -85,6 +85,11 @@ cosign verify ghcr.io/dpdpkit-dev/server:<version> \
   --certificate-identity-regexp '^https://github.com/dpdpkit-dev/dpdpkit-server/\.github/workflows/release-image\.yml@refs/tags/v'
 ```
 
+With a database configured the server serves the consent and rights API under `/dpdp` (same contract as
+`dpdpkit-fastapi`). Widgets call it with an end-user token from `POST /v1/tokens`; admins use the session from
+`POST /admin/login`. The shared conformance suite runs against the app in the tests and against the built image in CI
+(`DPDPKIT_CONFORMANCE=1` swaps the credentials for the suite's test headers; never set it outside tests).
+
 Until then, use [`dpdpkit-fastapi`](https://github.com/dpdpkit-dev/dpdpkit-fastapi) or the core library
 [`dpdpkit-core`](https://github.com/dpdpkit-dev/dpdpkit-core). Documentation:
 https://dpdpkit-dev.github.io/dpdpkit-docs/dev/

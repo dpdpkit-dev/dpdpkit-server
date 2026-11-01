@@ -42,6 +42,32 @@ jobs:
           test "$(docker exec srv id -u)" = 10001
           docker logs srv
 
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+      - run: docker build -t dpdpkit-server:ci .
+      - name: Start the image (test-header authentication, throwaway in-memory database)
+        run: |
+          docker run -d --name srv --read-only --tmpfs /tmp -p 8000:8000 \
+            -v "$PWD/tests/conformance/dpdpkit.yaml:/etc/dpdpkit/dpdpkit.yaml:ro" \
+            -e DPDPKIT_DATABASE_URL=sqlite:// -e DPDPKIT_MIGRATE_ON_STARTUP=1 \
+            -e DPDPKIT_SIGNING_KEY=ci-only-signing-key -e DPDPKIT_CONFORMANCE=1 dpdpkit-server:ci
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:8000/readyz && break; sleep 1; done
+          curl -fs http://127.0.0.1:8000/readyz
+      - name: Conformance suite against the image
+        env:
+          DPDPKIT_BASE_URL: http://127.0.0.1:8000/dpdp
+        run: |
+          uv venv
+          uv pip install "dpdpkit-conformance @ git+https://github.com/dpdpkit-dev/dpdpkit-spec@main"
+          .venv/bin/dpdpkit-conformance -q
+      - if: failure()
+        run: docker logs srv
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -60,6 +86,7 @@ jobs:
             "dpdpkit-policies @ git+https://github.com/dpdpkit-dev/dpdpkit-policies@main" \
             "dpdpkit-core @ git+https://github.com/dpdpkit-dev/dpdpkit-core@main" \
             "dpdpkit-fastapi @ git+https://github.com/dpdpkit-dev/dpdpkit-fastapi@main" \
+            "dpdpkit-conformance[asgi] @ git+https://github.com/dpdpkit-dev/dpdpkit-spec@main" \
             -e ".[dev]"
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - run: pytest -q

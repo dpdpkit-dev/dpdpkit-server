@@ -33,6 +33,7 @@ class Settings:
     log_level: str = "info"
     migrate_on_startup: bool = False
     config_path: Path | None = None
+    conformance: bool = False  # test-only header authentication; environment only, never from the file
     database_url: str | None = field(default=None, repr=False)
     signing_key: str | None = field(default=None, repr=False)
     api_key_hashes: tuple[str, ...] = ()
@@ -63,6 +64,7 @@ class Settings:
             log_level=log_level,
             migrate_on_startup=_flag("migrate_on_startup", pick("migrate_on_startup"), defaults.migrate_on_startup),
             config_path=config_path,
+            conformance=_flag("DPDPKIT_CONFORMANCE", env.get("DPDPKIT_CONFORMANCE") or None, defaults.conformance),
             database_url=_secret(env, "DATABASE_URL"),
             signing_key=_secret(env, "SIGNING_KEY"),
             api_key_hashes=_names("api_key_hashes", pick("api_key_hashes")),

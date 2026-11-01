@@ -1,0 +1,33 @@
+# Configuration used by the conformance suite (tests/test_conformance.py). Not a template for production.
+policy: dpdp-rules-2025.v1
+overlays: []
+
+contact:
+  name: Conformance shop
+  email: privacy@shop.example.in
+  rights_url: https://shop.example.in/privacy/rights
+
+data_items:
+  - {id: email, name: Email address}
+  - {id: name, name: Full name}
+
+purposes:
+  - id: account
+    title: Create and run your account
+    description: We use these details to sign you in and provide the service.
+    data_items: [email, name]
+    required: true
+    retention: {trigger: last_activity, period_days: 1095}
+  - id: marketing
+    title: Send you offers
+    description: Occasional emails about products and discounts.
+    data_items: [email]
+    retention: {trigger: withdrawal, period_days: 0}
+
+notice:
+  title: How we use your personal data
+  body: Choose what you agree to. You can change your choices at any time.
+  links:
+    withdraw: https://shop.example.in/privacy/preferences
+    rights: https://shop.example.in/privacy/rights
+    board_complaint: https://shop.example.in/privacy/board-complaint

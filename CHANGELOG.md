@@ -36,6 +36,11 @@ first working release.
   engine from `DPDPKIT_DATABASE_URL` and the mounted `dpdpkit.yaml` when none is passed.
 - `docker-compose.yml` (Postgres 16, the API with migrate-on-start, one worker), `.env.example` and
   `dpdpkit.example.yaml` with a `webhooks:` entry.
+- The consent and rights API of dpdpkit-fastapi is served under `/dpdp` when a database is configured. The data
+  principal is the subject of a signed end-user token; an admin session token grants the `admin` role.
+  `DPDPKIT_CONFORMANCE=1` (environment only; tests only) switches to the `X-DPDP-Test-*` headers of dpdpkit-spec.
+- Conformance suite (dpdpkit-conformance) passing against the server app (`tests/test_conformance.py`) and, in CI,
+  against the built image (`conformance` job, `DPDPKIT_BASE_URL`).
 - `examples/node-express` (Express app: end-user tokens, signature-verified webhooks, confirmations; `npm test`)
   and `examples/laravel` (client, controller and signature check for the same flow).
 - Release image workflow (`release-image.yml`): `linux/amd64` + `linux/arm64` build, push to GHCR, keyless cosign
