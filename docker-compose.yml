@@ -1,0 +1,63 @@
+# dpdpkit-server with Postgres: the API, the worker and the database.
+#   cp .env.example .env     # then fill in the secrets (see the comments in that file)
+#   docker compose up
+# The API is on http://localhost:8000. /healthz, /readyz and /metrics have no credentials: keep them off the internet.
+x-env: &env
+  DPDPKIT_CONFIG: /etc/dpdpkit/dpdpkit.yaml
+  DPDPKIT_DATABASE_URL: postgresql://dpdpkit:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/dpdpkit
+  DPDPKIT_SIGNING_KEY: ${DPDPKIT_SIGNING_KEY:?set DPDPKIT_SIGNING_KEY in .env}
+  DPDPKIT_API_KEY_HASHES: ${DPDPKIT_API_KEY_HASHES:?set DPDPKIT_API_KEY_HASHES in .env}
+  DPDPKIT_ADMIN_PASSWORD_HASH: ${DPDPKIT_ADMIN_PASSWORD_HASH:-}
+  # Read by the webhooks: list in dpdpkit.yaml (secret_env).
+  APP_WEBHOOK_SECRET: ${APP_WEBHOOK_SECRET:-}
+
+x-dpdpkit: &dpdpkit
+  image: ghcr.io/dpdpkit-dev/server:${DPDPKIT_VERSION:-latest}
+  read_only: true
+  tmpfs: [/tmp]
+  # Lets the example config reach an app running on the host (examples/node-express).
+  extra_hosts: ["host.docker.internal:host-gateway"]
+  restart: unless-stopped
+  volumes:
+    - ./dpdpkit.example.yaml:/etc/dpdpkit/dpdpkit.yaml:ro
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dpdpkit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: dpdpkit
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dpdpkit -d dpdpkit"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    <<: *dpdpkit
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      <<: *env
+      DPDPKIT_MIGRATE_ON_STARTUP: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Run exactly one worker: retention, ledger verification, root-hash export and webhook delivery.
+  worker:
+    <<: *dpdpkit
+    command: ["worker"]
+    environment: *env
+    ports:
+      - "127.0.0.1:8001:8000"
+    depends_on:
+      server:
+        condition: service_healthy
+
+volumes:
+  pgdata:

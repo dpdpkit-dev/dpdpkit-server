@@ -65,6 +65,17 @@ docker run --read-only --tmpfs /tmp -p 8001:8000 -e DPDPKIT_DATABASE_URL=... ghc
 
 The worker serves the same `/healthz`, `/readyz` and `/metrics` on its port.
 
+With Docker Compose (Postgres, the API and one worker; copy `.env.example` to `.env` and fill in the secrets first):
+
+```sh
+cp .env.example .env
+docker compose up
+```
+
+It mounts `dpdpkit.example.yaml` as the config: edit the purposes, notice and `webhooks:` list for your app. Examples
+of an app talking to the server: [`examples/node-express`](examples/node-express) (token minting, signed webhooks,
+confirmations; has tests) and a [Laravel snippet](examples/laravel/README.md) for the same two jobs.
+
 Images are published for `linux/amd64` and `linux/arm64` under one tag, signed with cosign (keyless, from the
 release workflow) and carry an SBOM and build provenance. Verify before you run:
 

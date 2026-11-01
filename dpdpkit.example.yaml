@@ -1,0 +1,45 @@
+# Example dpdpkit.yaml for docker-compose.yml. Replace every value with your own.
+# Purposes, notice wording and retention periods are decisions for you and your counsel.
+# dpdpkit records and enforces what you configure; it does not decide what is lawful.
+policy: dpdp-rules-2025.v1
+overlays: []
+
+contact:
+  name: Example Shop
+  email: privacy@shop.example.in
+  rights_url: https://shop.example.in/privacy/rights
+
+data_items:
+  - {id: email, name: Email address}
+  - {id: order_history, name: Order history}
+
+purposes:
+  - id: account
+    title: Create and run your account
+    description: We use these details to sign you in and provide the service.
+    data_items: [email, order_history]
+    required: true
+    retention: {trigger: last_activity, period_days: 1095}
+  - id: marketing
+    title: Send you offers
+    description: Occasional emails about products and discounts.
+    data_items: [email]
+    retention: {trigger: withdrawal, period_days: 0}
+
+notice:
+  title: How we use your personal data
+  body: Choose what you agree to. You can change your choices at any time.
+  links:
+    withdraw: https://shop.example.in/privacy/preferences
+    rights: https://shop.example.in/privacy/rights
+    board_complaint: https://shop.example.in/privacy/board-complaint   # replace with the Board's complaint page
+
+# Where the server sends erasure.due and export.requested. The secret is read from the named environment variable.
+webhooks:
+  - id: app
+    url: http://host.docker.internal:3000/dpdpkit/webhook
+    secret_env: APP_WEBHOOK_SECRET
+    events: [erasure.due, export.requested]
+
+server:
+  log_level: info

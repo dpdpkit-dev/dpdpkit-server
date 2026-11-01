@@ -12,3 +12,5 @@ dist/
 coverage.xml
 htmlcov/
 *.db
+node_modules/
+.env

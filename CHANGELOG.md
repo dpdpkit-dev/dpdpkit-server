@@ -34,6 +34,10 @@ first working release.
   health check works for it too. Needs `DPDPKIT_DATABASE_URL`.
 - `/readyz` (503 until the database answers) and `/metrics` (Prometheus text format). `create_app` now builds the
   engine from `DPDPKIT_DATABASE_URL` and the mounted `dpdpkit.yaml` when none is passed.
+- `docker-compose.yml` (Postgres 16, the API with migrate-on-start, one worker), `.env.example` and
+  `dpdpkit.example.yaml` with a `webhooks:` entry.
+- `examples/node-express` (Express app: end-user tokens, signature-verified webhooks, confirmations; `npm test`)
+  and `examples/laravel` (client, controller and signature check for the same flow).
 - Release image workflow (`release-image.yml`): `linux/amd64` + `linux/arm64` build, push to GHCR, keyless cosign
   signature, SBOM and provenance; README documents `cosign verify`.
 
