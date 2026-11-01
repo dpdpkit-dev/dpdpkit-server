@@ -23,6 +23,12 @@ first working release.
     `python -m dpdpkit.server hash-password`) and optional OIDC (`/admin/oidc/login` and `/callback`; settings
     `oidc_issuer`, `oidc_client_id`, `oidc_redirect_uri`, `DPDPKIT_OIDC_CLIENT_SECRET`, `admin_emails`).
   - `require_api_key`, `require_user_token` and `require_admin` dependencies for the endpoints that follow.
+- Webhooks (`dpdpkit.server.webhooks`): `erasure.due` and `export.requested` are delivered signed and retried by the
+  dpdpkit-fastapi outbox. The app confirms with `POST /v1/webhooks/confirmations` (API key), which writes a
+  `webhook.erasure.*` / `webhook.export.*` entry into the ledger; confirmations are idempotent on the event id, a
+  confirmed export closes the access request, and a failed one leaves it open. Admin endpoints
+  `GET /admin/webhooks/deliveries`, `GET /admin/webhooks/dead-letters` and `POST /admin/webhooks/redeliver`.
+  `create_app(settings, dpdpkit)` takes the engine; without it these endpoints answer 503.
 
 ## 0.0.1a0 - 2026-11-01
 

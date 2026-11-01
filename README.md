@@ -39,10 +39,21 @@ docker run --read-only --tmpfs /tmp -p 8000:8000 \
 
 The settings are loaded and validated at start-up; they are not wired to the database or the API yet.
 
+Webhooks: `erasure.due` and `export.requested` are sent signed (`X-DPDPKit-Signature`) and retried with backoff.
+After acting on its own data, your app confirms with the event `id` and the server records it in the ledger:
+
+```sh
+curl -X POST http://localhost:8000/v1/webhooks/confirmations -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"event_type": "export.requested", "event_id": "ev_...", "subject_id": "<request_id>", "status": "completed"}'
+```
+
+`subject_id` is the `schedule_id` (erasure.due) or `request_id` (export.requested) from the event data. A request
+that is never confirmed stays open and shows as overdue. Failed deliveries are listed at
+`GET /admin/webhooks/dead-letters` and can be re-queued with `POST /admin/webhooks/redeliver`.
+
 Planned:
 
-- Hashed API keys, signed end-user tokens, admin login with optional OIDC
-- Webhooks (`erasure.due`, `export.requested`) with callback confirmation into the ledger
 - `worker` command and `/healthz`, `/readyz`, `/metrics`
 
 Until then, use [`dpdpkit-fastapi`](https://github.com/dpdpkit-dev/dpdpkit-fastapi) or the core library
