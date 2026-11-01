@@ -12,9 +12,15 @@ Self-hosted [dpdpkit](https://github.com/dpdpkit-dev) server. It will run the dp
 **Not usable yet.** Version 0.0.1a0 is an empty pre-release that reserves the name on PyPI. The first working
 release is planned for milestone v0.5 (planned for June 2027); the work is tracked as SRV-01 to SRV-09 in the dpdpkit task sheet.
 
+Done so far: the `Dockerfile` (based on `dpdpkit-fastapi`, non-root, runs with a read-only file system) and the
+image release workflow (multi-arch, signed with cosign). The image only serves `/healthz` for now:
+
+```sh
+docker run --read-only --tmpfs /tmp -p 8000:8000 ghcr.io/dpdpkit-dev/server
+```
+
 Planned:
 
-- Image based on `dpdpkit-fastapi` (non-root, read-only file system), multi-arch, signed with cosign
 - Configuration from environment variables or a mounted `dpdpkit.yaml`
 - Hashed API keys, signed end-user tokens, admin login with optional OIDC
 - Webhooks (`erasure.due`, `export.requested`) with callback confirmation into the ledger

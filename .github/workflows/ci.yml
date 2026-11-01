@@ -23,10 +23,24 @@ jobs:
           uv pip install \
             "dpdpkit-policies @ git+https://github.com/dpdpkit-dev/dpdpkit-policies@main" \
             "dpdpkit-core @ git+https://github.com/dpdpkit-dev/dpdpkit-core@main" \
+            "dpdpkit-fastapi @ git+https://github.com/dpdpkit-dev/dpdpkit-fastapi@main" \
             ".[dev]"
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - run: ruff check . && ruff format --check .
       - run: cd /tmp && mypy -p dpdpkit.server --disallow-untyped-defs
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker build -t dpdpkit-server:ci .
+      - name: Runs as non-root on a read-only file system
+        run: |
+          docker run -d --name srv --read-only --tmpfs /tmp -p 8000:8000 dpdpkit-server:ci
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:8000/healthz && break; sleep 1; done
+          curl -fs http://127.0.0.1:8000/healthz
+          test "$(docker exec srv id -u)" = 10001
+          docker logs srv
 
   test:
     runs-on: ubuntu-latest
@@ -45,6 +59,7 @@ jobs:
           uv pip install \
             "dpdpkit-policies @ git+https://github.com/dpdpkit-dev/dpdpkit-policies@main" \
             "dpdpkit-core @ git+https://github.com/dpdpkit-dev/dpdpkit-core@main" \
+            "dpdpkit-fastapi @ git+https://github.com/dpdpkit-dev/dpdpkit-fastapi@main" \
             -e ".[dev]"
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - run: pytest -q

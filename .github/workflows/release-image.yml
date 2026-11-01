@@ -1,0 +1,69 @@
+# Release the container image on tag vX.Y.Z to GHCR (ghcr.io/dpdpkit-dev/server). No Docker Hub.
+# Copied from _shared/workflows/release-image.yml. Runs alongside release.yml on the same tag.
+# No registry secret: the job's GITHUB_TOKEN (packages: write) pushes to the organisation's GHCR.
+# Multi-arch (amd64, arm64), cosign keyless signature, SBOM + provenance attestations.
+# Pre-release tags (a1, rc1) push only the version tag; finals also move `latest`.
+name: Release image
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: server
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write      # push to ghcr.io
+      id-token: write      # cosign keyless signing
+      attestations: write  # build provenance
+    steps:
+      - uses: actions/checkout@v7
+      - id: v
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" =~ [a-z] ]]; then echo "prerelease=true"; else echo "prerelease=false"; fi >> "$GITHUB_OUTPUT"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+      - name: Tag must match package version
+        run: grep -q '^__version__ = "${{ steps.v.outputs.version }}"$' src/dpdpkit/server/__init__.py
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.v.outputs.image }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=${{ steps.v.outputs.version }}
+            type=raw,value=latest,enable=${{ steps.v.outputs.prerelease == 'false' }}
+      # metadata-action sets org.opencontainers.image.source, which links the package to this repo.
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          sbom: true
+          provenance: mode=max
+      - uses: sigstore/cosign-installer@v3
+      - name: Sign
+        run: cosign sign --yes "${{ steps.v.outputs.image }}@${{ steps.build.outputs.digest }}"
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ steps.v.outputs.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
