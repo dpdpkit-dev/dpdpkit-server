@@ -5,6 +5,8 @@ first working release.
 
 ## Unreleased
 
+## 0.1.0a2 - 2026-11-02
+
 ### Added
 - Container image `ghcr.io/dpdpkit-dev/server` built from `dpdpkit-fastapi`: non-root (UID 10001), runs with a
   read-only file system, `/healthz` liveness probe. Multi-arch, cosign-signed, released by `release-image.yml`.

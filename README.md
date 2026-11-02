@@ -9,11 +9,9 @@ Self-hosted [dpdpkit](https://github.com/dpdpkit-dev) server. It will run the dp
 
 ## Status
 
-**Not usable yet.** Version 0.0.1a0 is an empty pre-release that reserves the name on PyPI. The first working
-release is planned for milestone v0.5 (planned for June 2027); the work is tracked as SRV-01 to SRV-09 in the dpdpkit task sheet.
+**Alpha.** Version 0.1.0a2 is the first working pre-release. APIs can still change between pre-releases.
 
-Done so far: the `Dockerfile` (based on `dpdpkit-fastapi`, non-root, runs with a read-only file system) and the
-image release workflow (multi-arch, signed with cosign). The image only serves `/healthz` for now:
+The image is based on `dpdpkit-fastapi` and runs as non-root on a read-only file system:
 
 ```sh
 docker run --read-only --tmpfs /tmp -p 8000:8000 ghcr.io/dpdpkit-dev/server
@@ -37,7 +35,7 @@ docker run --read-only --tmpfs /tmp -p 8000:8000 \
 | Database URL (secret) | `DPDPKIT_DATABASE_URL` or `_FILE` | not allowed | none |
 | Signing key (secret) | `DPDPKIT_SIGNING_KEY` or `_FILE` | not allowed | none |
 
-The settings are loaded and validated at start-up; they are not wired to the database or the API yet.
+The settings are loaded and validated at start-up.
 
 Webhooks: `erasure.due` and `export.requested` are sent signed (`X-DPDPKit-Signature`) and retried with backoff.
 After acting on its own data, your app confirms with the event `id` and the server records it in the ledger:
@@ -90,8 +88,7 @@ With a database configured the server serves the consent and rights API under `/
 `POST /admin/login`. The shared conformance suite runs against the app in the tests and against the built image in CI
 (`DPDPKIT_CONFORMANCE=1` swaps the credentials for the suite's test headers; never set it outside tests).
 
-Until then, use [`dpdpkit-fastapi`](https://github.com/dpdpkit-dev/dpdpkit-fastapi) or the core library
-[`dpdpkit-core`](https://github.com/dpdpkit-dev/dpdpkit-core). Documentation:
+Documentation:
 https://dpdpkit-dev.github.io/dpdpkit-docs/dev/
 
 ## License
