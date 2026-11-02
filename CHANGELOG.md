@@ -38,7 +38,8 @@ first working release.
   `dpdpkit.example.yaml` with a `webhooks:` entry.
 - The consent and rights API of dpdpkit-fastapi is served under `/dpdp` when a database is configured. The data
   principal is the subject of a signed end-user token; an admin session token grants the `admin` role.
-  `DPDPKIT_CONFORMANCE=1` (environment only; tests only) switches to the `X-DPDP-Test-*` headers of dpdpkit-spec.
+  `DPDPKIT_CONFORMANCE=1` (environment only; tests only) switches to the `X-DPDP-Test-*` headers of dpdpkit-spec
+  and registers demo guardian verifiers (evidence token `demo-ok`); without it no guardian verifier is configured.
 - Conformance suite (dpdpkit-conformance) passing against the server app (`tests/test_conformance.py`) and, in CI,
   against the built image (`conformance` job, `DPDPKIT_BASE_URL`).
 - `examples/node-express` (Express app: end-user tokens, signature-verified webhooks, confirmations; `npm test`)

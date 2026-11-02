@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 from fastapi import Request
 
 from dpdpkit.errors import ConfigError
 from dpdpkit.fastapi import DPDPKit
+from dpdpkit.guardians import CallbackVerifier, VerifierRequest
 from dpdpkit.server import auth
 from dpdpkit.server.settings import Settings
 
@@ -51,6 +55,18 @@ def bind_auth(dpdpkit: DPDPKit, settings: Settings) -> None:
     dpdpkit.admin_guard = role
 
 
+CONFORMANCE_GUARDIAN_METHODS = ("existing_kyc", "digilocker_token", "partner_token", "court_order")
+
+
+def _conformance_verifiers() -> list[CallbackVerifier]:
+    """Test-only guardian verifiers: only the evidence token "demo-ok" passes."""
+
+    def check(request: VerifierRequest, evidence: Mapping[str, Any]) -> bool:
+        return evidence.get("token") == "demo-ok"
+
+    return [CallbackVerifier(method, check) for method in CONFORMANCE_GUARDIAN_METHODS]
+
+
 def build_dpdpkit(settings: Settings) -> DPDPKit | None:
     """The engine for ``settings.database_url``, or ``None`` when no database is configured."""
     if not settings.database_url:
@@ -63,4 +79,5 @@ def build_dpdpkit(settings: Settings) -> DPDPKit | None:
         config=settings.config_path,
         signing_key=settings.signing_key,
         migrate_on_startup=settings.migrate_on_startup,
+        guardian_verifiers=_conformance_verifiers() if settings.conformance else [],
     )
