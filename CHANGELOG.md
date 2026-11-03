@@ -5,6 +5,12 @@ first working release.
 
 ## Unreleased
 
+## 0.1.0a3 - 2026-11-03
+
+### Added
+- The image serves the admin dashboard at `/dpdp/admin/ui/`, from `dpdpkit-fastapi` 0.1.0a3.
+
+
 ## 0.1.0a2 - 2026-11-02
 
 ### Added

@@ -84,7 +84,7 @@ cosign verify ghcr.io/dpdpkit-dev/server:<version> \
 ```
 
 With a database configured the server serves the consent and rights API under `/dpdp` (same contract as
-`dpdpkit-fastapi`). Widgets call it with an end-user token from `POST /v1/tokens`; admins use the session from
+`dpdpkit-fastapi`) and the admin dashboard at `/dpdp/admin/ui/`. Widgets call it with an end-user token from `POST /v1/tokens`; admins use the session from
 `POST /admin/login`. The shared conformance suite runs against the app in the tests and against the built image in CI
 (`DPDPKIT_CONFORMANCE=1` swaps the credentials for the suite's test headers; never set it outside tests).
 

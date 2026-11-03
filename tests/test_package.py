@@ -3,7 +3,7 @@ from dpdpkit import server
 
 
 def test_version() -> None:
-    assert server.__version__ == "0.1.0a2"
+    assert server.__version__ == "0.1.0a3"
 
 
 def test_installs_alongside_dpdpkit_core() -> None:
