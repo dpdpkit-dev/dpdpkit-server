@@ -50,7 +50,7 @@ jobs:
             type=raw,value=latest,enable=${{ steps.v.outputs.prerelease == 'false' }}
       # metadata-action sets org.opencontainers.image.source, which links the package to this repo.
       - id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
