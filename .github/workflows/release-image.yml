@@ -62,7 +62,7 @@ jobs:
       - uses: sigstore/cosign-installer@v3
       - name: Sign
         run: cosign sign --yes "${{ steps.v.outputs.image }}@${{ steps.build.outputs.digest }}"
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ steps.v.outputs.image }}
           subject-digest: ${{ steps.build.outputs.digest }}
